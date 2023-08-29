@@ -1,0 +1,17 @@
+{"properties": [
+  {
+    "name": "flow.file-save-path",
+    "type": "java.lang.String",
+    "description": "save path for csv file from aws"
+  },
+  {
+    "name": "kma.auth-key",
+    "type": "java.lang.String",
+    "description": "kma authKey"
+  },
+  {
+    "name": "flask.url",
+    "type": "java.lang.String",
+    "description": "flask url"
+  }
+]}
