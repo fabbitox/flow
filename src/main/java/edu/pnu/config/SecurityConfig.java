@@ -2,7 +2,6 @@ package edu.pnu.config;
 
 import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -17,14 +16,14 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import edu.pnu.persistence.MemberRepository;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-	@Autowired
-	private  AuthenticationConfiguration authConfig;
-	@Autowired
-	private MemberRepository memberRepository;
+	private final AuthenticationConfiguration authConfig;
+	private final MemberRepository memberRepository;
 	
 	@Bean
 	public PasswordEncoder passwordEncoder() {

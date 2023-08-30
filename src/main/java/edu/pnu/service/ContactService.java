@@ -2,17 +2,17 @@ package edu.pnu.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.pnu.domain.Contact;
 import edu.pnu.persistence.ContactRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ContactService {
-	@Autowired
-	private ContactRepository contactRepo;
+	private final ContactRepository contactRepo;
 	
 	public List<Contact> selectAll() {
 		return contactRepo.findAll();

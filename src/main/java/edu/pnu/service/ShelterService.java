@@ -2,17 +2,17 @@ package edu.pnu.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.pnu.domain.Shelter;
 import edu.pnu.persistence.ShelterRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ShelterService {
-	@Autowired
-	private ShelterRepository shelterRepo;
+	private final ShelterRepository shelterRepo;
 	
 	public List<Shelter> selectAll() {
 		return shelterRepo.findAll();
