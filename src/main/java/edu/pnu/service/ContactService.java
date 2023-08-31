@@ -22,8 +22,7 @@ public class ContactService {
 		contactRepo.save(contact);
 	}
 	@Transactional
-	public void delete(Contact contact) {
-		Integer id = contactRepo.findByNameAndContact(contact.getName(), contact.getContact()).getIdcontact();
-		contactRepo.deleteById(id);
+	public void deleteById(Integer id) {
+		contactRepo.deleteByIdcontact(id);
 	}
 }
