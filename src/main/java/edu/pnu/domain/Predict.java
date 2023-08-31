@@ -15,4 +15,8 @@ public class Predict {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer idpredict;
 	private LocalDateTime predDatetime;
+	
+	public Predict(LocalDateTime predDatetime) {
+		this.predDatetime = predDatetime;
+	}
 }
