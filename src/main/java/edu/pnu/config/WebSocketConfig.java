@@ -8,7 +8,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,10 +32,17 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.pnu.domain.PredResult;
+import edu.pnu.domain.Predict;
+import edu.pnu.service.PredResultService;
+import edu.pnu.service.PredictService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
@@ -63,6 +72,7 @@ class WebSocketHandler extends TextWebSocketHandler {
 				try {
 					ws.sendMessage(new TextMessage(sendMessage));
 				} catch (IOException e) {
+					
 				}
 			}
 		}
@@ -71,39 +81,59 @@ class WebSocketHandler extends TextWebSocketHandler {
 
 // 설정한 주기에 따라 자동으로 실행되어야 하는 경우 설정
 @Component
+@RequiredArgsConstructor
 class Scheduler {
-	static int id = 1;
 	@Value("${flow.file-save-path}")
 	private String saveFilePath;
-	@Value("${kma.auth-key}")
-	private String authKey;
-	private String[] stns = new String[] { "762", "764", "768" };
+	@Value("${fcst.url}")
+	private String fcstUrl;
+	@Value("${fcst.service-key}")
+	private String serviceKey;
 	@Value("${flask.url}")
 	private String flaskUrl;
+	private String[] xys = new String[] { "64", "82", "65", "85", "67", "79" };
+	private String[] names = new String[] {"섬진강댐", "호암교", "요천대교"};
 	private String[] filenames = new String[3];
+	private final PredictService predictService;
+	private final PredResultService predResultService;
+	private String waterfile;
+	private LocalDateTime refTime;
+	private LocalDateTime base;
+	private DateTimeFormatter ymdhr;
 
 //	@Scheduled(fixedDelay = 5000)			// scheduler 끝나는 시간 기준으로 1000 간격으로 실행
-//	@Scheduled(fixedRate = 60000) // scheduler 시작하는 시간 기준으로 1000 간격으로 실행
+	@Scheduled(fixedRate = 180000) // scheduler 시작하는 시간 기준으로 1000 간격으로 실행
 //  @Scheduled(cron = "*/1 * * * * *")	// crontab에 따라 1초마다 실행
-	public void fixedDelayTask() {
-		LocalDateTime now = LocalDateTime.now();
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
-		String tm2 = now.format(formatter);
-		String tm1 = now.minusHours(12).format(formatter);
-		for (int i = 0; i < 3; i++) {
-			String stn = stns[i];
-			String url = String.format(
-					"https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-aws2_min?tm1=%s&tm2=%s&stn=%s&disp=1&help=2&authKey=%s",
-					tm1, tm2, stn, authKey);
-			try {
-				String filename = saveFilePath + stn + "-" + tm2 + ".csv";
-				filenames[i] = filename;
-				downloadFile(url, filename);
-			} catch (IOException e) {
-				System.out.println("파일 다운로드 중 오류가 발생했습니다: " + e.getMessage());
-			}
+	public void task() {
+		refTime = LocalDateTime.now();
+		int minute = refTime.getMinute();
+		if (minute < 45) {
+			base = refTime.minusMinutes(minute + 30);
+		} else {
+			base = refTime.minusMinutes(minute - 30);
 		}
+		ymdhr = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+		DateTimeFormatter ymdh = DateTimeFormatter.ofPattern("yyyyMMddHH");
+		DateTimeFormatter ymd = DateTimeFormatter.ofPattern("yyyyMMdd");
+		DateTimeFormatter hhmm = DateTimeFormatter.ofPattern("HHmm");
+		String baseDate = base.format(ymd);
+		String baseTime = base.format(hhmm);
+		for (int i = 0; i < 3; i++) {
+			String url = String.format(fcstUrl, serviceKey, baseDate, baseTime, xys[i * 2], xys[i * 2 + 1]);
+			filenames[i] = saveFilePath + names[i] + refTime.format(ymdhr) + ".json";
+			downloadFile(url, filenames[i]);
+		}
+		waterfile = saveFilePath + refTime.format(ymdh) + ".json";
+		downloadFile(String.format("http://www.wamis.go.kr:8080/wamis/openapi/wkw/wl_hrdata?obscd=4009638&startdt=%s&output=json", refTime.minusHours(7).format(ymd)), waterfile);
+//		Integer id = predictService.insert(new Predict(refTime)).getIdpredict();
+//		pipe(id);
+		pipe();
+	}
+
+//	private void pipe(Integer id) {
+	private void pipe() {
 		String url = flaskUrl + "/aws/update";
+		
 		File file1 = new File(filenames[0]);
 		File file2 = new File(filenames[1]);
 		File file3 = new File(filenames[2]);
@@ -124,29 +154,76 @@ class Scheduler {
 		responseMono.subscribe(responseBody -> {
 			ObjectMapper objectMapper = new ObjectMapper();
 			try {
-				WebSocketHandler.sendData(objectMapper.writeValueAsString(responseBody));
-			} catch (JsonProcessingException e) {
+				JsonNode responseJson = objectMapper.readTree(responseBody);
+				JsonNode resultNode = responseJson.get("result");
+				List<Double> values = new ArrayList<>();
+				values.addAll(getLastSix());
+				for (int i = 0; i < resultNode.size(); i++) {
+				    JsonNode node = resultNode.get(i);
+			        double wl = node.asDouble();
+					values.add(wl);
+//					predResultService.insert(new PredResult(id, i + 1, wl));
+			    }
+				WaterData wd = new WaterData(values, refTime.minusHours(5).minusMinutes(refTime.getMinute()).format(ymdhr), base.plusMinutes(30).format(ymdhr));
+				WebSocketHandler.sendData(objectMapper.writeValueAsString(wd));
+			} catch (IOException e) {
 				System.out.println("Error:" + e.getMessage());
 			}
 		}, error -> System.err.println("Error: " + error.getMessage()));
 	}
 
-	public static void downloadFile(String url, String saveFilePath) throws IOException {
-		URL fileUrl = new URL(url); // 다운로드할 파일의 URL 생성
-		URLConnection connection = fileUrl.openConnection(); // URL에 대한 연결 열기 및 URLConnection 객체 생성
+	public void downloadFile(String url, String saveFilePath) {
+		try {
+			URL fileUrl = new URL(url); // 다운로드할 파일의 URL 생성
+			URLConnection connection = fileUrl.openConnection(); // URL에 대한 연결 열기 및 URLConnection 객체 생성
+			InputStream inputStream = connection.getInputStream(); // 연결된 URL로부터 데이터를 읽어오기 위한 입력 스트림 생성
+			FileOutputStream outputStream = new FileOutputStream(saveFilePath); // 지정된 파일 경로에 파일을 쓰기 위한 출력 스트림 생성
 
-		InputStream inputStream = connection.getInputStream(); // 연결된 URL로부터 데이터를 읽어오기 위한 입력 스트림 생성
-		FileOutputStream outputStream = new FileOutputStream(saveFilePath); // 지정된 파일 경로에 파일을 쓰기 위한 출력 스트림 생성
+			byte[] buffer = new byte[1024]; // 데이터를 읽어올 버퍼 생성
+			int bytesRead; // 읽어온 바이트 수를 저장하는 변수
+			while ((bytesRead = inputStream.read(buffer)) != -1) {
+				outputStream.write(buffer, 0, bytesRead); // 버퍼에 있는 데이터를 파일에 기록
+			}
+			outputStream.close(); // 출력 스트림 닫기
+			inputStream.close(); // 입력 스트림 닫기
 
-		byte[] buffer = new byte[1024]; // 데이터를 읽어올 버퍼 생성
-		int bytesRead; // 읽어온 바이트 수를 저장하는 변수
-
-		while ((bytesRead = inputStream.read(buffer)) != -1) {
-			outputStream.write(buffer, 0, bytesRead); // 버퍼에 있는 데이터를 파일에 기록
+			System.out.println("다운로드 완료: " + saveFilePath);
+		} catch (IOException e) {
+			System.out.println("파일 다운로드 중 오류가 발생했습니다: " + e.getMessage());
 		}
+	}
+	
+	public List<Double> getLastSix() throws IOException {
+        // ObjectMapper 초기화
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(new File(waterfile));
 
-		outputStream.close(); // 출력 스트림 닫기
-		inputStream.close(); // 입력 스트림 닫기
+        // "list" 항목에서 마지막 6개 요소 가져오기
+        JsonNode listNode = jsonNode.get("list");
+        int size = listNode.size();
+        List<Double> lastSixItems = new ArrayList<>();
+        for (int i = size - 6; i < size; i++) {
+            lastSixItems.add(listNode.get(i).get("wl").asDouble());
+        }
+        return lastSixItems;
+    }
+}
+
+@Getter
+@Setter
+class WaterData {
+	@JsonProperty("list")
+	private List<Double> list;
+	@JsonProperty("pastStart")
+	private String pastStart;
+	@JsonProperty("predStart")
+	private String predStart;
+	
+	public WaterData() {}
+	public WaterData(List<Double> list, String pastStart, String predStart) {
+		this.list = list;
+		this.pastStart = pastStart;
+		this.predStart = predStart;
 	}
 }
 
