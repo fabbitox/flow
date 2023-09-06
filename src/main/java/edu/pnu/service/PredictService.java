@@ -13,7 +13,7 @@ public class PredictService {
 	private final PredictRepository predictRepo;
 	
 	@Transactional
-	public void insert(Predict predict) {
-		predictRepo.save(predict);
+	public Predict insert(Predict predict) {
+		return predictRepo.save(predict);
 	}
 }
