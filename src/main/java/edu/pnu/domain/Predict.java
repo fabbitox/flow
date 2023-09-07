@@ -15,8 +15,10 @@ public class Predict {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer idpredict;
 	private LocalDateTime predDatetime;
+	private LocalDateTime requestTime;
 	
-	public Predict(LocalDateTime predDatetime) {
+	public Predict(LocalDateTime predDatetime, LocalDateTime requestTime) {
 		this.predDatetime = predDatetime;
+		this.requestTime = requestTime;
 	}
 }
