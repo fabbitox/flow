@@ -16,6 +16,7 @@ public class PredResult {
 	private Integer hour;
 	private Double waterLevel;
 	
+	public PredResult() {}
 	public PredResult(Integer idpred, Integer hour, Double waterLevel) {
 		this.idpred = idpred;
 		this.hour = hour;

@@ -1,5 +1,7 @@
 package edu.pnu.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import edu.pnu.domain.PredResult;
@@ -15,5 +17,9 @@ public class PredResultService {
 	@Transactional
 	public void insert(PredResult predict) {
 		predResultRepo.save(predict);
+	}
+	
+	public List<PredResult> findByIdpred(Integer idpred) {
+		return predResultRepo.findByIdpred(idpred);
 	}
 }

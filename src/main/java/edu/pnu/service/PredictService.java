@@ -1,5 +1,7 @@
 package edu.pnu.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import edu.pnu.domain.Predict;
@@ -15,5 +17,9 @@ public class PredictService {
 	@Transactional
 	public Predict insert(Predict predict) {
 		return predictRepo.save(predict);
+	}
+	
+	public List<Predict> findLast1h() {
+		return predictRepo.findLast1h();
 	}
 }

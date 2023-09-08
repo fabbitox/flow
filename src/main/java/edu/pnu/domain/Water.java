@@ -10,16 +10,16 @@ import lombok.Getter;
 
 @Getter
 @Entity
-public class Predict {
+public class Water {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer idpredict;
-	private LocalDateTime predDatetime;
-	private LocalDateTime requestTime;
+	private Integer idwater;
+	private LocalDateTime waterDt;
+	private Double waterlevel;
 	
-	public Predict() {}
-	public Predict(LocalDateTime predDatetime, LocalDateTime requestTime) {
-		this.predDatetime = predDatetime;
-		this.requestTime = requestTime;
+	public Water() {}
+	public Water(LocalDateTime waterDt, Double waterlevel) {
+		this.waterDt = waterDt;
+		this.waterlevel = waterlevel;
 	}
 }
