@@ -218,10 +218,12 @@ class Scheduler {
 	@Scheduled(fixedRate = 3000)
 	public void pushPredicts() {
 		if (predicts == null)
+			predicts = predictService.findLast1h();
+		if (predicts.size() == 0)
 			return;
-		Predict pred = predicts.get(index++);
 		if (index == predicts.size())
 			index = 0;
+		Predict pred = predicts.get(index++);
 		LocalDateTime reqTime = pred.getRequestTime();
 		List<Water> waters = waterService.findLast6h(reqTime);
 		Integer id = pred.getIdpredict();
