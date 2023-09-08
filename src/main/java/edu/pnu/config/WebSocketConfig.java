@@ -109,8 +109,6 @@ class Scheduler {
 
 	@Scheduled(fixedRate = 180000)
 	public void getFcstData() {
-		predicts = predictService.findLast1h();
-		index = 0;
 		refTime = LocalDateTime.now();
 		int minute = refTime.getMinute();
 		LocalDateTime base;
@@ -129,6 +127,8 @@ class Scheduler {
 		}
 		Integer id = predictService.insert(new Predict(base.plusMinutes(30), refTime)).getIdpredict();
 		requestPred(id);
+		predicts = predictService.findLast1h();
+		index = 0;
 //		requestPred();
 	}
 
@@ -237,7 +237,7 @@ class Scheduler {
 		}
 		String pastStart = waters.get(0).getWaterDt().format(ymdhm);
 		String predStart = pred.getPredDatetime().format(ymdhm);
-		WaterData wd = new WaterData(values, pastStart, predStart);
+		WaterData wd = new WaterData(values, pastStart, predStart, reqTime.format(ymdhm));
 		ObjectMapper objectMapper = new ObjectMapper();
 		try {
 			WebSocketHandler.sendData(objectMapper.writeValueAsString(wd));
@@ -256,12 +256,15 @@ class WaterData {
 	private String pastStart;
 	@JsonProperty("predStart")
 	private String predStart;
+	@JsonProperty("reqTime")
+	private String reqTime;
 	
 	public WaterData() {}
-	public WaterData(List<Double> list, String pastStart, String predStart) {
+	public WaterData(List<Double> list, String pastStart, String predStart, String reqTime) {
 		this.list = list;
 		this.pastStart = pastStart;
 		this.predStart = predStart;
+		this.reqTime = reqTime;
 	}
 }
 
