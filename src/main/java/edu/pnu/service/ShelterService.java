@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import edu.pnu.domain.Shelter;
+import edu.pnu.entity.Shelter;
 import edu.pnu.persistence.ShelterRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,9 @@ public class ShelterService {
 		return shelterRepo.findAll();
 	}
 	@Transactional
-	public void insert(Shelter shelter) {
+	public void addShelter(Shelter shelter) {
+		if (shelter.getIdcriteria() == null)
+			shelter.setIdcriteria(1);
 		shelterRepo.save(shelter);
 	}
 	@Transactional

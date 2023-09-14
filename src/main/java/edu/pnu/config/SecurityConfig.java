@@ -55,8 +55,8 @@ public class SecurityConfig {
 		});
 		http.authorizeHttpRequests(security -> {
 			security.requestMatchers(HttpMethod.DELETE).authenticated().requestMatchers(HttpMethod.POST, "/shelter")
-					.authenticated().requestMatchers(HttpMethod.GET, "/contact/list").authenticated().anyRequest()
-					.permitAll();
+					.authenticated().requestMatchers(HttpMethod.GET, "/contact/list").authenticated()
+					.requestMatchers(HttpMethod.GET, "/alarm").authenticated().anyRequest().permitAll();
 		});
 
 		http.formLogin(frmLogin -> frmLogin.disable());// Form을 이용한 로그인 사용하지 않겠다

@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.pnu.domain.Criteria;
+import edu.pnu.entity.Criteria;
 import edu.pnu.service.CriteriaService;
 import lombok.RequiredArgsConstructor;
 

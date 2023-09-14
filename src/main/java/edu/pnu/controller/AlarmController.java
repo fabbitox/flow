@@ -5,17 +5,17 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.pnu.domain.CtrlArea;
-import edu.pnu.service.CtrlAreaService;
+import edu.pnu.dto.AlarmDTO;
+import edu.pnu.service.AlarmService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-public class CtrlAreaController {
-	private final CtrlAreaService ctrlAreaService;
+public class AlarmController {
+	private final AlarmService alarmService;
 	
-	@GetMapping("/ctrlarea")
-	public List<CtrlArea> selectAll() {
-		return ctrlAreaService.selectAll();
+	@GetMapping("/alarm")
+	public List<AlarmDTO> findAll() {
+		return alarmService.findAll();
 	}
 }

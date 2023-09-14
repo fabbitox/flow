@@ -6,21 +6,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import edu.pnu.domain.Member;
+import edu.pnu.entity.Member;
 import edu.pnu.persistence.MemberRepository;
 
 @SpringBootTest
 public class MemberInitialize {
 	@Autowired
-	MemberRepository memRepo;
+	MemberRepository memberRepo;
 	PasswordEncoder encoder = new BCryptPasswordEncoder();
-	
+
 	@Test
 	public void doWork() {
-		memRepo.save(Member.builder()
-				.id("admin")
-				.password(encoder.encode("abcd"))
-				.role("ROLE_ADMIN")
-				.enabled(true).build());
+		memberRepo.save(Member.builder().id("admin").password(encoder.encode("abcd")).build());
 	}
 }

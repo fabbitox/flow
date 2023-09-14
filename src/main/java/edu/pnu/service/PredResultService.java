@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import edu.pnu.domain.PredResult;
+import edu.pnu.entity.PredResult;
 import edu.pnu.persistence.PredResultRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -15,11 +15,19 @@ public class PredResultService {
 	private final PredResultRepository predResultRepo;
 	
 	@Transactional
-	public void insert(PredResult predict) {
+	public void addPredResult(PredResult predict) {
 		predResultRepo.save(predict);
 	}
 	
-	public List<PredResult> findByIdpred(Integer idpred) {
-		return predResultRepo.findByIdpred(idpred);
+	public List<PredResult> findByIdpredict(Integer idpred) {
+		return predResultRepo.findByIdpredict(idpred);
+	}
+	
+	public List<Integer> findWarning(Integer idpredict) {
+		return predResultRepo.findWarning(idpredict);
+	}
+	
+	public List<Integer> findDanger(Integer idpredict) {
+		return predResultRepo.findDanger(idpredict);
 	}
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import edu.pnu.domain.Criteria;
+import edu.pnu.entity.Criteria;
 import edu.pnu.persistence.CriteriaRepository;
 import lombok.RequiredArgsConstructor;
 

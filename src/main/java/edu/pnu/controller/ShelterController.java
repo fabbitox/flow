@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.pnu.domain.Shelter;
+import edu.pnu.entity.Shelter;
 import edu.pnu.service.ShelterService;
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,7 @@ public class ShelterController {
 	}
 	@PostMapping("/shelter")
 	public void insert(@RequestBody Shelter shelter) {
-		shelterService.insert(shelter);
+		shelterService.addShelter(shelter);
 	}
 	@DeleteMapping("/shelter/{id}")
 	public void delete(@PathVariable Integer id) {

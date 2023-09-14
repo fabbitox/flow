@@ -1,25 +1,25 @@
-package edu.pnu.domain;
+package edu.pnu.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Getter
 @Entity
+@Getter
+@NoArgsConstructor
 public class PredResult {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer idresult;
-	private Integer idpred;
+	private Integer idpredResult;
+	private Integer idpredict;
 	private Integer hour;
-	private Double waterLevel;
-	
-	public PredResult() {}
-	public PredResult(Integer idpred, Integer hour, Double waterLevel) {
-		this.idpred = idpred;
+	private Double wl;
+	public PredResult(Integer id, int hour, double wl) {
+		idpredict = id;
 		this.hour = hour;
-		this.waterLevel = waterLevel;
+		this.wl = wl;
 	}
 }

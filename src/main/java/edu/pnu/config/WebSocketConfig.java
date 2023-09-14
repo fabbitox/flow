@@ -33,16 +33,17 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import edu.pnu.domain.PredResult;
-import edu.pnu.domain.Predict;
-import edu.pnu.domain.Water;
+import edu.pnu.dto.MemberDTO;
+import edu.pnu.entity.Alarm;
+import edu.pnu.entity.PredResult;
+import edu.pnu.entity.Predict;
+import edu.pnu.service.AlarmService;
+import edu.pnu.service.MemberService;
 import edu.pnu.service.PredResultService;
 import edu.pnu.service.PredictService;
-import edu.pnu.service.WaterService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -99,24 +100,23 @@ class Scheduler {
 	private String[] filenames = new String[3];
 	private final PredictService predictService;
 	private final PredResultService predResultService;
-	private final WaterService waterService;
+	private final MemberService memberService;
+	private final AlarmService alarmService;
 	private DateTimeFormatter ymd = DateTimeFormatter.ofPattern("yyyyMMdd");
 	private DateTimeFormatter ymdhm = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
 	private LocalDateTime refTime;
-	private List<Predict> predicts;
-	private int index;
+	private Predict predict;
 	private String filename;
 
-	@Scheduled(fixedRate = 180000)
+//	@Scheduled(fixedRate = 200000)
 	public void getFcstData() {
 		refTime = LocalDateTime.now();
 		int minute = refTime.getMinute();
 		LocalDateTime base;
-		if (minute < 45) {
+		if (minute < 45)
 			base = refTime.minusMinutes(minute + 30);
-		} else {
+		else
 			base = refTime.minusMinutes(minute - 30);
-		}
 		DateTimeFormatter hhmm = DateTimeFormatter.ofPattern("HHmm");
 		String baseDate = base.format(ymd);
 		String baseTime = base.format(hhmm);
@@ -125,15 +125,10 @@ class Scheduler {
 			filenames[i] = saveFilePath + names[i] + refTime.format(ymdhm) + ".json";
 			downloadFile(url, filenames[i]);
 		}
-		Integer id = predictService.insert(new Predict(base.plusMinutes(30), refTime)).getIdpredict();
-		requestPred(id);
-		predicts = predictService.findLast1h();
-		index = 0;
-//		requestPred();
+		requestPred(base);
 	}
 
-	private void requestPred(Integer id) {
-//	private void requestPred() {
+	private void requestPred(LocalDateTime base) {
 		String url = flaskUrl + "/aws/update";
 		
 		File file1 = new File(filenames[0]);
@@ -159,15 +154,34 @@ class Scheduler {
 		// 응답 처리
 		responseMono.subscribe(responseBody -> {
 			ObjectMapper objectMapper = new ObjectMapper();
-//			System.out.println(responseBody);
+			System.out.println(responseBody);
 			try {
+				Integer id = predictService.addPredict(new Predict(base.plusMinutes(30), refTime)).getIdpredict();
 				JsonNode responseJson = objectMapper.readTree(responseBody);
 				JsonNode resultNode = responseJson.get("result");
 				for (int i = 0; i < resultNode.size(); i++) {
 				    JsonNode node = resultNode.get(i);
 			        double wl = node.asDouble();
-					predResultService.insert(new PredResult(id, i + 1, wl));
+					predResultService.addPredResult(new PredResult(id, i + 1, wl));
 			    }
+				List<MemberDTO> members = memberService.findAll();
+				predict = predictService.findLast();
+				List<Integer> warningIds = predResultService.findWarning(id);
+				if (warningIds.size() != 0) {
+					for (MemberDTO member: members) {
+						for (Integer prid: warningIds) {
+							alarmService.sendAlarm(new Alarm(member.getIdmember(), prid, 1, LocalDateTime.now()));
+						}
+					}
+				}
+				List<Integer> dangerIds = predResultService.findDanger(id);
+				if (dangerIds.size() != 0) {
+					for (MemberDTO member: members) {
+						for (Integer prid: dangerIds) {
+							alarmService.sendAlarm(new Alarm(member.getIdmember(), prid, 2, LocalDateTime.now()));
+						}
+					}
+				}
 			} catch (IOException e) {
 				System.out.println("Error:" + e.getMessage());
 			}
@@ -194,54 +208,47 @@ class Scheduler {
 			System.out.println("파일 다운로드 중 오류가 발생했습니다: " + e.getMessage());
 		}
 	}
-	
-//	@Scheduled(fixedRate = 600000)
-	public void insertWaterData() throws IOException {
-		LocalDateTime now = saveWaterFile();
-		
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(new File(filename));
-
-        JsonNode listNode = jsonNode.get("list");
-        int size = listNode.size();
-        waterService.insert(new Water(now.minusMinutes(now.getMinute()), listNode.get(size - 1).get("wl").asDouble()));
-    }
 
 	private LocalDateTime saveWaterFile() {
 		LocalDateTime now = LocalDateTime.now();
 		DateTimeFormatter ymdh = DateTimeFormatter.ofPattern("yyyyMMddHH");
-		filename = saveFilePath + now.format(ymdh) + ".json";
-		downloadFile(String.format("http://www.wamis.go.kr:8080/wamis/openapi/wkw/wl_hrdata?obscd=4009638&startdt=%s&output=json", now.minusHours(7).format(ymd)), filename);
+		filename = saveFilePath + now.minusMinutes(10).format(ymdh) + ".json";
+		downloadFile(String.format("http://www.wamis.go.kr:8080/wamis/openapi/wkw/wl_hrdata?obscd=4009638&startdt=%s&output=json", now.minusMinutes(10).minusHours(7).format(ymd)), filename);
 		return now;
 	}
 	
 	@Scheduled(fixedRate = 3000)
-	public void pushPredicts() {
-		if (predicts == null)
-			predicts = predictService.findLast1h();
-		if (predicts.size() == 0)
+	public void repeatResults() {
+		if (predict == null)
+			predict = predictService.findLast();
+		if (predict == null)
 			return;
-		if (index == predicts.size())
-			index = 0;
-		Predict pred = predicts.get(index++);
-		LocalDateTime reqTime = pred.getRequestTime();
-		List<Water> waters = waterService.findLast6h(reqTime);
+		pushPredict(predict);
+	}
+
+	private void pushPredict(Predict pred) {
 		Integer id = pred.getIdpredict();
-		List<PredResult> results = predResultService.findByIdpred(id);
+		List<PredResult> results = predResultService.findByIdpredict(id);
 		List<Double> values = new ArrayList<>();
-		for (Water water: waters) {
-			values.add(water.getWaterlevel());
-		}
-		for (PredResult result: results) {
-			values.add(result.getWaterLevel());
-		}
-		String pastStart = waters.get(0).getWaterDt().format(ymdhm);
-		String predStart = pred.getPredDatetime().format(ymdhm);
-		WaterData wd = new WaterData(values, pastStart, predStart, reqTime.format(ymdhm));
 		ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode;
 		try {
+			if (filename == null)
+				saveWaterFile();
+			jsonNode = objectMapper.readTree(new File(filename));
+			JsonNode listNode = jsonNode.get("list");
+			int size = listNode.size();
+			for (int i = 5; i >= 0; i--) {
+				values.add(listNode.get(size - 1 - i).get("wl").asDouble());
+			}
+			for (PredResult result: results) {
+				values.add(result.getWl());
+			}
+			String pastStart = listNode.get(size - 6).get("ymdh").asText() + "00";
+			String predStart = pred.getPredDt().format(ymdhm);
+			WaterData wd = new WaterData(values, pastStart, predStart, pred.getReqDt().format(ymdhm));
 			WebSocketHandler.sendData(objectMapper.writeValueAsString(wd));
-		} catch (JsonProcessingException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
