@@ -37,6 +37,25 @@
     대피소 삭제
     shelter/{id}
 
-
 ## WebSocket
 ws://localhost:8080/pushservice
+
+## 시작 가이드
+MySQL에서 data 폴더 안의 sql 실행
+
+src/main/resources/application.properties 파일에 작성
+```
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+flow.file-save-path=
+flask.url=
+fcst.service-key=
+fcst.url=https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst?serviceKey=%s&pageNo=1&numOfRows=1000&dataType=JSON&base_date=%s&base_time=%s&nx=%s&ny=%s
+```
