@@ -13,6 +13,7 @@ public class Shelter {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer idshelter;
 	private Integer idcriteria;
+	private String name;
 	private String address;
 	private Double latitude;
 	private Double longtitude;
