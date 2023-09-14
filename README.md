@@ -1,4 +1,6 @@
 # 하천 수위 예측 프로젝트 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.1.3-brightgreen)](https://spring.io/projects/spring-boot) [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue)](https://www.mysql.com/)
+<image src='System.png'>
+
 ## ERD
 <image src='ERD.PNG'>
 
