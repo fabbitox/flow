@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import edu.pnu.entity.Alarm;
 
 public interface AlarmRepository extends JpaRepository<Alarm, Integer> {
-	@Query(value = "select name, contact, wl, idcriteria, alarm_dt "
-			+ "from alarm, member, pred_result "
-			+ "where alarm.idmember = member.idmember and alarm.idpred_result = pred_result.idpred_result", nativeQuery = true)
+	@Query(value = "select name, contact, wl, idcriteria, pred_dt + interval hour hour as wl_dt, alarm_dt "
+			+ "from alarm, member, pred_result, predict "
+			+ "where alarm.idmember = member.idmember and alarm.idpred_result = pred_result.idpred_result and pred_result.idpredict = predict.idpredict", nativeQuery = true)
 	public List<Object[]> getLogs();
 }

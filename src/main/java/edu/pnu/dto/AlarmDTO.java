@@ -12,5 +12,6 @@ public class AlarmDTO {
 	private String contact;
 	private Double wl;
 	private Integer idcriteria;
+	private LocalDateTime wlDt;
 	private LocalDateTime alarmDt;
 }

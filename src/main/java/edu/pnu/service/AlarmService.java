@@ -26,7 +26,7 @@ public class AlarmService {
 		List<Object[]> alarms = alarmRepo.getLogs();
 		List<AlarmDTO> alarmDTOs = new ArrayList<>();
 		for (Object[] alarm: alarms)
-			alarmDTOs.add(new AlarmDTO((String)alarm[0], (String)alarm[1], (Double)alarm[2], (Integer)alarm[3], ((Timestamp)alarm[4]).toLocalDateTime()));
+			alarmDTOs.add(new AlarmDTO((String)alarm[0], (String)alarm[1], (Double)alarm[2], (Integer)alarm[3], ((Timestamp)alarm[4]).toLocalDateTime(), ((Timestamp)alarm[5]).toLocalDateTime()));
 		return alarmDTOs;
 	}
 }
