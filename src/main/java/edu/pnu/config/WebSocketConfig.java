@@ -108,7 +108,7 @@ class Scheduler {
 	private Predict predict;
 	private String filename;
 
-//	@Scheduled(fixedRate = 200000)
+	@Scheduled(fixedRate = 200000)
 	public void getFcstData() {
 		refTime = LocalDateTime.now();
 		int minute = refTime.getMinute();
@@ -164,28 +164,30 @@ class Scheduler {
 			        double wl = node.asDouble();
 					predResultService.addPredResult(new PredResult(id, i + 1, wl));
 			    }
-				List<MemberDTO> members = memberService.findAll();
 				predict = predictService.findLast();
-				List<Integer> warningIds = predResultService.findWarning(id);
-				if (warningIds.size() != 0) {
-					for (MemberDTO member: members) {
-						for (Integer prid: warningIds) {
-							alarmService.sendAlarm(new Alarm(member.getIdmember(), prid, 1, LocalDateTime.now()));
-						}
-					}
-				}
-				List<Integer> dangerIds = predResultService.findDanger(id);
-				if (dangerIds.size() != 0) {
-					for (MemberDTO member: members) {
-						for (Integer prid: dangerIds) {
-							alarmService.sendAlarm(new Alarm(member.getIdmember(), prid, 2, LocalDateTime.now()));
-						}
-					}
-				}
 			} catch (IOException e) {
 				System.out.println("Error:" + e.getMessage());
 			}
 		}, error -> System.err.println("Error: " + error.getMessage()));
+	}
+
+	@Scheduled(fixedRate = 3600000)
+	private void sendAlarm() {
+		List<MemberDTO> members = memberService.findAll();
+		Integer id = predictService.findLast().getIdpredict();
+		List<Integer> dangerIds = predResultService.findDanger(id);
+		if (dangerIds.size() != 0) {
+			for (MemberDTO member: members) {
+				alarmService.sendAlarm(new Alarm(member.getIdmember(), dangerIds.get(0), 2, LocalDateTime.now()));
+			}
+		} else {
+			List<Integer> warningIds = predResultService.findWarning(id);
+			if (warningIds.size() != 0) {
+				for (MemberDTO member : members) {
+					alarmService.sendAlarm(new Alarm(member.getIdmember(), warningIds.get(0), 1, LocalDateTime.now()));
+				}
+			}
+		}
 	}
 
 	public void downloadFile(String url, String saveFilePath) {
