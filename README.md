@@ -5,6 +5,7 @@
 <image src='ERD.PNG'>
 
 ## REST API
+관리자 로그인: admin abcd
 ### GET
     연락처 리스트(관리자)
     contact/list
