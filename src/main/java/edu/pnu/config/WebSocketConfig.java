@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -250,6 +251,15 @@ class Scheduler {
 			String predStart = pred.getPredDt().format(ymdhm);
 			WaterData wd = new WaterData(values, pastStart, predStart, pred.getReqDt().format(ymdhm));
 			WebSocketHandler.sendData(objectMapper.writeValueAsString(wd));
+			
+	        LocalDate datePart = LocalDate.parse(pastStart.substring(0, 8), ymd);
+	        int hour = Integer.parseInt(pastStart.substring(8, 10));
+	        if (hour == 24) {
+	            datePart = datePart.plusDays(1);
+	            hour = 0;
+	        }
+            LocalDateTime start = datePart.atStartOfDay().withHour(hour);
+			System.out.println(predResultService.findLast6h(start));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

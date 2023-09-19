@@ -1,5 +1,6 @@
 package edu.pnu.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -29,5 +30,9 @@ public class PredResultService {
 	
 	public List<Integer> findDanger(Integer idpredict) {
 		return predResultRepo.findDanger(idpredict);
+	}
+	
+	public List<Double> findLast6h(LocalDateTime start) {
+		return predResultRepo.findLast6h(start);
 	}
 }
