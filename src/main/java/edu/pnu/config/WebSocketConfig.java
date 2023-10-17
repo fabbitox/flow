@@ -1,7 +1,6 @@
 package edu.pnu.config;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -10,7 +9,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +16,10 @@ import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -30,13 +30,17 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -110,11 +114,26 @@ class Scheduler {
 			System.out.println();
 		}
 		System.out.println(rain);
+		requestPred();
 	}
 
-	private void requestPred(LocalDateTime base) {
+	private void requestPred() {
 		String url = flaskUrl + "/aws/update";
 		WebClient webClient = WebClient.builder().baseUrl(url).build();
+		Mono<String> responseMono = webClient.post().uri("").contentType(MediaType.APPLICATION_JSON)
+				.body(BodyInserters.fromValue(new InputData(waterLevels[5][0], waterLevels[5][1], rain))).retrieve().bodyToMono(String.class);
+		responseMono.subscribe(responseBody -> {
+			ObjectMapper om = new ObjectMapper();
+			try {
+				System.out.println(responseBody);
+				JsonNode jsonResult = om.readTree(responseBody).get("result");
+				for (int i = 0; i < 3; i++) {
+					results[i] = jsonResult.get(0).get(i).asDouble();
+				}
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}, error -> System.err.println("Error: " + error.getMessage()));
 	}
 
 	private void getWater(int i) throws IOException, InterruptedException {
@@ -199,6 +218,15 @@ class WaterData {
 		this.predStart = predStart;
 		this.reqTime = reqTime;
 	}
+}
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+class InputData {
+	Double water1;
+	Double water2;
+	Double rain;
 }
 
 // 클라이언트에서 연결할 웹소켓 설정 : ws://localhost:8080/pushservice
