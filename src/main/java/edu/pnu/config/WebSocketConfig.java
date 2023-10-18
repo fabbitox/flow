@@ -128,7 +128,7 @@ class Scheduler {
 				System.out.println(responseBody);
 				JsonNode jsonResult = om.readTree(responseBody).get("result");
 				for (int i = 0; i < 3; i++) {
-					results[i] = jsonResult.get(0).get(i).asDouble();
+					results[i] = jsonResult.get(i).asDouble();
 				}
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
@@ -170,7 +170,7 @@ class Scheduler {
 		}
 	}
 	
-//	@Scheduled(fixedRate = 3000)
+	@Scheduled(fixedRate = 3000)
 	private void pushPredict() {
 		List<Double> values = new ArrayList<>();
 		ObjectMapper objectMapper = new ObjectMapper();
